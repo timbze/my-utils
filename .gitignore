@@ -7,3 +7,4 @@ qbx/bin/
 qbx/obj/
 qbx/out/
 *.response.xml
+qbx/release/

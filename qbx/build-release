@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Builds the release files for one version into a directory: both qbx.exe builds, and qbx.zip
+# with everything an AI agent needs (both exes, the scripts, schema/, examples/, AGENTS.md).
+# The version must match <Version> in qbx.csproj. CI runs this for each v* tag.
+# Needs the .NET 10 SDK and zip.
+#
+#   build-release 0.9.0 [out-dir]    (default out-dir: release/)
+set -euo pipefail
+
+if [[ $# -lt 1 ]]; then
+  echo "usage: build-release <version> [out-dir]" >&2
+  exit 1
+fi
+version="$1"
+dir="$(dirname "$(readlink -f "$0")")"
+out="$(readlink -f "${2:-release}")"
+
+csproj=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' "$dir/qbx.csproj")
+if [[ "$version" != "$csproj" ]]; then
+  echo "build-release: version $version does not match <Version>$csproj</Version> in qbx.csproj" >&2
+  exit 1
+fi
+
+x86="qbx-$version-win-x86-qb2021-and-older.exe"
+x64="qbx-$version-win-x64-qb2022-and-newer.exe"
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+
+dotnet publish "$dir/qbx.csproj" -c Release -r win-x86 -o "$work/x86" >&2
+dotnet publish "$dir/qbx.csproj" -c Release -r win-x64 -o "$work/x64" >&2
+
+mkdir -p "$out" "$work/zip/qbx"
+cp "$work/x86/qbx.exe" "$out/$x86"
+cp "$work/x64/qbx.exe" "$out/$x64"
+
+cd "$dir"
+cp -r AGENTS.md README.md qbx-remote qbx-validate qbx-skeleton qbx-desktop.ps1 schema examples \
+  "$out/$x86" "$out/$x64" "$work/zip/qbx/"
+cp ../LICENSE "$work/zip/qbx/"
+rm -f "$out/qbx.zip"
+(cd "$work/zip" && zip -qr -X "$out/qbx.zip" qbx)
+
+ls -l "$out/$x86" "$out/$x64" "$out/qbx.zip"

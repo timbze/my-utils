@@ -3,6 +3,24 @@
 How to read from and write to QuickBooks Desktop with qbx without guessing. The README covers
 building and installing.
 
+## Set up (first time)
+
+Skip this if `./qbx-remote doctor` already passes, or if qbx.exe is already on the Windows machine.
+
+1. **Ask the human** which QuickBooks Desktop year they run (Help > About QuickBooks), and
+   whether you run on that Windows machine or reach it over SSH (and its SSH host name).
+2. **Pick the exe.** QuickBooks 2022 and newer: `qbx-*-win-x64-qb2022-and-newer.exe`. 2021 and
+   older: `qbx-*-win-x86-qb2021-and-older.exe`. Both are in the release's `qbx.zip`
+   (`https://github.com/timbze/my-utils/releases/latest/download/qbx.zip`). A wrong pick fails
+   with "QBXMLRP2 is not registered for this ...-bit process"; install the other one.
+3. **Over SSH** (you run on Linux or macOS): the human sets up OpenSSH on Windows
+   (README.md, "Set up a new machine", step 2). Then run
+   `QBX_HOST=<host> ./qbx-remote install <exe>`, which copies it and runs `doctor`. Export
+   `QBX_HOST` for every later `qbx-remote` command too.
+4. **On the Windows machine itself:** copy the exe to a folder as `qbx.exe` and run it from
+   there (`qbx.exe company`). `qbx-validate` and `qbx-remote` are bash; use `qbx --check`
+   instead. `qbx-skeleton` needs Python 3.
+
 ## Check the setup first
 
 - Remote host: `./qbx-remote doctor`. It checks SSH, the installed files, the desktop session,

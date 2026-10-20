@@ -26,6 +26,19 @@ AI agents: read [AGENTS.md](AGENTS.md).
 | `qbx-remote` | Linux/macOS | Runs qbx on a Windows host over SSH; `install` and `doctor` set it up |
 | `qbx-validate` | Linux/macOS | Checks a request against the schema (needs `xmllint`) |
 | `qbx-skeleton` | anywhere (Python 3) | Prints the full shape of any qbXML message |
+| `build-release` | Linux/macOS | Builds both exes and `qbx.zip` for a release (CI runs it for each `v*` tag) |
+
+## Use it with an AI agent
+
+Give your agent (Claude Code, Codex, ...) this prompt:
+
+> Download https://github.com/timbze/my-utils/releases/latest/download/qbx.zip, unzip it, and
+> read qbx/AGENTS.md. Then set up qbx so you can read my QuickBooks Desktop company file.
+
+`qbx.zip` has both exes, the scripts, the schema, the examples and [AGENTS.md](AGENTS.md), which
+tells the agent how to install qbx, write requests that QuickBooks accepts, and write safely.
+The agent asks you for the QuickBooks year and the Windows host; setting up SSH on Windows
+(below) is up to you.
 
 ## Set up a new machine
 

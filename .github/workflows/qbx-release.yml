@@ -1,0 +1,31 @@
+# Builds qbx for each v* tag and attaches both exes and qbx.zip to a GitHub release.
+name: qbx release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+      - name: Build
+        run: qbx/build-release "${GITHUB_REF_NAME#v}" qbx/release
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          cat > notes.md <<NOTES
+          **With an AI agent:** download \`qbx.zip\` and point the agent at \`qbx/AGENTS.md\` (see the [README](https://github.com/timbze/my-utils/tree/$GITHUB_REF_NAME/qbx#use-it-with-an-ai-agent)).
+
+          **Just the exe:** \`qbx-$v-win-x64-qb2022-and-newer.exe\` for QuickBooks Desktop 2022 and newer, \`qbx-$v-win-x86-qb2021-and-older.exe\` for 2021 and older. Rename it to \`qbx.exe\`, or pass it to \`qbx-remote install\` as it is.
+          NOTES
+          gh release create "$GITHUB_REF_NAME" qbx/release/* --title "qbx $v" --notes-file notes.md

@@ -116,16 +116,25 @@ doctor() {
 }
 
 install() {
-  local exe="${1:-$dir/out/qbx.exe}"
+  local exe="${1:-$dir/out/qbx.exe}" bundled name
   if [[ ! -f "$exe" ]]; then
-    echo "qbx-remote: $exe not found; build it (see README.md) or pass a downloaded release exe:" >&2
-    echo "  qbx-remote install ~/Downloads/qbx-0.9.0-win-x64-qb2022-and-newer.exe" >&2
+    bundled=$(ls "$dir"/qbx-*.exe 2>/dev/null || true)
+    if [[ -z "${1:-}" && -n "$bundled" ]]; then
+      # Unpacked from qbx.zip, which has both builds: the choice depends on the QuickBooks year.
+      echo "qbx-remote: pass the exe that matches QuickBooks on $host (x64 for 2022 and newer):" >&2
+      sed 's/^/  qbx-remote install /' <<<"$bundled" >&2
+    else
+      echo "qbx-remote: $exe not found; build it (see README.md) or pass a downloaded release exe:" >&2
+      echo "  qbx-remote install ~/Downloads/qbx-0.9.0-win-x64-qb2022-and-newer.exe" >&2
+    fi
     exit 1
   fi
   remote "if not exist qbx mkdir qbx"
   scp -q -o LogLevel=ERROR "$exe" "$host:qbx/qbx.exe"
   scp -q -o LogLevel=ERROR "$dir/qbx-desktop.ps1" "$host:qbx/qbx-desktop.ps1"
-  echo "Copied $(basename "$exe") (as qbx.exe) and qbx-desktop.ps1 to $host:%USERPROFILE%\\qbx"
+  name=$(basename "$exe")
+  [[ "$name" == qbx.exe ]] || name+=" (as qbx.exe)"
+  echo "Copied $name and qbx-desktop.ps1 to $host:%USERPROFILE%\\qbx"
   echo
   doctor "$exe"
 }
