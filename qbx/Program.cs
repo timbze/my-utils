@@ -17,18 +17,21 @@ public static class Program
         Usage:
           qbx [options] <request.xml | ->   send a request, print the response
           qbx [options] versions            print the qbXML versions QuickBooks supports
+          qbx [options] company             print the name of the open company
 
         Options:
           -f, --file <path>      company file (default: the one open in QuickBooks)
           -o, --out <path>       write the response here instead of stdout
           -w, --write            allow requests other than *QueryRq (add, mod, delete, void)
           -a, --app-name <name>  name shown in the QuickBooks authorization prompt (default: qbx)
+          -e, --expect-company <name>
+                                 refuse to run unless the open company has this name
           -c, --check            only check the request against the qbXML schema; QuickBooks is not needed
               --no-validate      send without checking the request against the schema
 
         Read-only by default: a request is refused unless every message ends in QueryRq.
         Requests for qbXML 13.0 and older are checked against the 13.0 schema before they are sent.
-        Exit codes: 0 ok, 1 usage, schema or connection error, 2 QuickBooks returned an error status.
+        Exit codes: 0 ok, 1 usage, schema, connection or wrong-company error, 2 QuickBooks returned an error status.
         """;
 
     [STAThread]
@@ -40,6 +43,7 @@ public static class Program
         string companyFile = "";
         string? outPath = null;
         string appName = "qbx";
+        string? expectCompany = null;
         var allowWrite = false;
         var checkOnly = false;
         var validate = true;
@@ -57,6 +61,9 @@ public static class Program
                     break;
                 case "-a" or "--app-name" when i + 1 < args.Length:
                     appName = args[++i];
+                    break;
+                case "-e" or "--expect-company" when i + 1 < args.Length:
+                    expectCompany = args[++i];
                     break;
                 case "-w" or "--write":
                     allowWrite = true;
@@ -89,7 +96,7 @@ public static class Program
         }
 
         string? request = null;
-        if (input != "versions")
+        if (input is not ("versions" or "company"))
         {
             request = input == "-" ? Console.In.ReadToEnd() : File.ReadAllText(input);
 
@@ -139,9 +146,22 @@ public static class Program
         {
             using var qb = new QbSession(appName, companyFile);
 
+            if (expectCompany != null || input == "company")
+            {
+                var company = qb.CompanyName();
+                if (input == "company")
+                    Console.WriteLine(company);
+                if (expectCompany != null && company != expectCompany)
+                {
+                    Console.Error.WriteLine($"Refused: QuickBooks has \"{company}\" open, expected \"{expectCompany}\".");
+                    return 1;
+                }
+            }
+
             if (request == null)
             {
-                Console.WriteLine(string.Join(Environment.NewLine, qb.SupportedVersions()));
+                if (input == "versions")
+                    Console.WriteLine(string.Join(Environment.NewLine, qb.SupportedVersions()));
                 return 0;
             }
 
@@ -249,6 +269,20 @@ internal sealed class QbSession : IDisposable
     }
 
     public string ProcessRequest(string request) => (string)Call("ProcessRequest", _ticket!, request)!;
+
+    public string CompanyName()
+    {
+        var response = ProcessRequest($"""
+            <?xml version="1.0" encoding="utf-8"?>
+            <?qbxml version="{QbxmlSchema.Version}"?>
+            <QBXML>
+              <QBXMLMsgsRq onError="stopOnError">
+                <CompanyQueryRq><IncludeRetElement>CompanyName</IncludeRetElement></CompanyQueryRq>
+              </QBXMLMsgsRq>
+            </QBXML>
+            """);
+        return XDocument.Parse(response).Descendants("CompanyName").FirstOrDefault()?.Value ?? "";
+    }
 
     public IEnumerable<string> SupportedVersions()
     {

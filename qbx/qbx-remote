@@ -1,38 +1,161 @@
 #!/usr/bin/env bash
-# Sends a local qbXML request to qbx on a Windows host over SSH and prints the response.
-# Expects qbx.exe and qbx-desktop.ps1 in %USERPROFILE%\qbx on that host.
-# The request is checked against the qbXML schema here first (qbx-validate, if xmllint is
+# Runs qbx on a Windows host over SSH, in the desktop session where QuickBooks runs.
+# Expects qbx.exe and qbx-desktop.ps1 in %USERPROFILE%\qbx on that host ("install" puts them there).
+# A request is checked against the qbXML schema here first (qbx-validate, if xmllint is
 # installed), so a malformed request fails at once instead of after the round trip.
 #
-#   QBX_HOST=winvm qbx-remote request.xml [qbx options] > response.xml
-#   qbx-remote versions
+#   qbx-remote request.xml [qbx options] > response.xml
+#   qbx-remote versions | company [qbx options]
+#   qbx-remote install [path/to/qbx.exe]    copy qbx.exe and qbx-desktop.ps1 to the host, then run doctor
+#   qbx-remote doctor                       check everything qbx needs on the host, step by step
+#
+# QBX_HOST is the SSH host (default winvm). QBX_TIMEOUT is how many seconds the host waits for
+# qbx (default 900; doctor uses 120).
 set -euo pipefail
 
 host="${QBX_HOST:-winvm}"
-if [[ $# -lt 1 ]]; then
-  echo "usage: qbx-remote <request.xml | versions> [qbx options]" >&2
-  exit 1
-fi
+dir="$(dirname "$(readlink -f "$0")")"
+usage="usage: qbx-remote <request.xml | versions | company | install [qbx.exe] | doctor> [qbx options]"
+
+remote() {
+  ssh -o LogLevel=ERROR "$host" "$@"
+}
+
+# Runs qbx through qbx-desktop.ps1. Each argument is quoted, so values with spaces stay whole.
+run() {
+  local args="" a
+  for a in "$@"; do
+    args+=" \"${a//\"/\\\"}\""
+  done
+  remote "${QBX_TIMEOUT:+set QBX_TIMEOUT=$QBX_TIMEOUT&& }powershell -NoProfile -ExecutionPolicy Bypass -File %USERPROFILE%\\qbx\\qbx-desktop.ps1$args"
+}
+
+sha256() {
+  if command -v sha256sum >/dev/null; then sha256sum "$1"; else shasum -a 256 "$1"; fi | cut -d' ' -f1
+}
+
+ok() { printf '  ok    %s\n' "$*"; }
+warn() { printf '  warn  %s\n' "$*"; }
+fail() { printf '  FAIL  %s\n' "$*"; }
+
+doctor() {
+  local user files hashes company versions err
+  echo "Checking qbx on $host"
+
+  if command -v xmllint >/dev/null; then
+    ok "xmllint found: requests are validated here before they are sent"
+  else
+    warn "xmllint not found: requests are only validated on the host (install libxml2-utils or libxml2)"
+  fi
+
+  if ! user=$(ssh -o LogLevel=ERROR -o BatchMode=yes -o ConnectTimeout=10 "$host" "echo %USERNAME%" 2>&1); then
+    fail "ssh $host: $user"
+    return 1
+  fi
+  user=${user//$'\r'/}
+  if [[ "$user" == "%USERNAME%" ]]; then
+    fail "ssh $host works, but its shell is not cmd.exe (the Windows OpenSSH default), which qbx-remote needs"
+    return 1
+  fi
+  ok "ssh $host works, Windows user $user"
+
+  files=$(remote "dir /b qbx\\qbx.exe qbx\\qbx-desktop.ps1" 2>/dev/null | tr -d '\r' || true)
+  if [[ "$files" != *qbx.exe* || "$files" != *qbx-desktop.ps1* ]]; then
+    fail "qbx.exe and qbx-desktop.ps1 are not both in %USERPROFILE%\\qbx: run qbx-remote install"
+    return 1
+  fi
+  ok "qbx.exe and qbx-desktop.ps1 are installed"
+  if [[ -f "$dir/out/qbx.exe" ]]; then
+    hashes=$(remote "powershell -NoProfile -Command \"(Get-FileHash qbx\\qbx.exe).Hash; (Get-FileHash qbx\\qbx-desktop.ps1).Hash\"" \
+      | tr -d '\r' | tr 'A-F' 'a-f' | tr '\n' ' ' || true)
+    if [[ "$hashes" == "$(sha256 "$dir/out/qbx.exe") $(sha256 "$dir/qbx-desktop.ps1") " ]]; then
+      ok "they match out/qbx.exe and qbx-desktop.ps1 here"
+    else
+      warn "they differ from out/qbx.exe or qbx-desktop.ps1 here: run qbx-remote install to update them"
+    fi
+  fi
+
+  if ! remote 'tasklist /fi "imagename eq explorer.exe" /v /fo csv /nh' | grep -qi "\\\\$user\""; then
+    fail "$user is not logged on to the Windows desktop (a disconnected RDP session is fine)"
+    return 1
+  fi
+  ok "$user has a desktop session"
+
+  if ! remote 'tasklist /fi "imagename eq QBW*" /nh' | grep -qi '^QBW'; then
+    fail "QuickBooks is not running: open it on the company file"
+    return 1
+  fi
+  ok "QuickBooks is running"
+
+  echo "  ...   asking QuickBooks for the open company. On the first run QuickBooks shows an"
+  echo "        authorization prompt on the desktop: choose \"Yes, always\"."
+  err=$(mktemp)
+  if ! company=$(QBX_TIMEOUT="${QBX_TIMEOUT:-120}" run company 2>"$err" | tr -d '\r'); then
+    fail "qbx could not talk to QuickBooks: $(tr -d '\r' <"$err")"
+    rm -f "$err"
+    return 1
+  fi
+  ok "QuickBooks has \"$company\" open and qbx is authorized"
+
+  if ! versions=$(QBX_TIMEOUT="${QBX_TIMEOUT:-120}" run versions 2>"$err" | tr -d '\r' | tr '\n' ' '); then
+    fail "qbx versions failed: $(tr -d '\r' <"$err")"
+    rm -f "$err"
+    return 1
+  fi
+  rm -f "$err"
+  if [[ " $versions" == *" 13.0 "* ]]; then
+    ok "qbXML versions $versions(13.0, which the schema and examples use, is supported)"
+  else
+    warn "qbXML versions $versions: 13.0 is not supported, so the schema and examples here do not apply as they are"
+  fi
+  echo "All set."
+}
+
+install() {
+  local exe="${1:-$dir/out/qbx.exe}"
+  if [[ ! -f "$exe" ]]; then
+    echo "qbx-remote: $exe not found; build it first (see README.md)" >&2
+    exit 1
+  fi
+  remote "if not exist qbx mkdir qbx"
+  scp -q -o LogLevel=ERROR "$exe" "$host:qbx/qbx.exe"
+  scp -q -o LogLevel=ERROR "$dir/qbx-desktop.ps1" "$host:qbx/qbx-desktop.ps1"
+  echo "Copied qbx.exe and qbx-desktop.ps1 to $host:%USERPROFILE%\\qbx"
+  echo
+  doctor
+}
+
+case "${1:-}" in
+  "" | -h | --help)
+    echo "$usage" >&2
+    exit 1
+    ;;
+  install)
+    shift
+    install "$@"
+    exit
+    ;;
+  doctor)
+    doctor
+    exit
+    ;;
+  versions | company)
+    cmd="$1"
+    shift
+    run "$@" "$cmd"
+    exit
+    ;;
+esac
 
 req="$1"
 shift
 
-run() {
-  ssh -o LogLevel=ERROR "$host" \
-    "powershell -NoProfile -ExecutionPolicy Bypass -File %USERPROFILE%\\qbx\\qbx-desktop.ps1 $*"
-}
-
-if [[ "$req" == versions ]]; then
-  run "$@" versions
-  exit
-fi
-
 if [[ " $* " != *" --no-validate "* ]] && command -v xmllint >/dev/null; then
-  "$(dirname "$(readlink -f "$0")")/qbx-validate" "$req" || exit 1
+  "$dir/qbx-validate" "$req" || exit 1
 fi
 
 # Requests can hold company data, so the copy on the host is removed afterwards.
-name="req-$(date +%s%N).xml"
+name="req-$(date +%s)-$$-$RANDOM.xml"
 scp -q -o LogLevel=ERROR "$req" "$host:qbx/$name"
-trap 'ssh -o LogLevel=ERROR "$host" "del qbx\\$name" >/dev/null 2>&1 || true' EXIT
+trap 'remote "del qbx\\$name" >/dev/null 2>&1 || true' EXIT
 run "$@" "qbx\\$name"

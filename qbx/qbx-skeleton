@@ -1,0 +1,155 @@
+#!/usr/bin/env python3
+"""Prints the full shape of a qbXML message: every element in the order QuickBooks requires,
+with notes on which are optional, repeat or are alternatives, and the allowed values.
+
+  qbx-skeleton CheckAddRq            a request
+  qbx-skeleton CheckQueryRs          a response; any element works, e.g. CheckRet or ExpenseLineAdd
+  qbx-skeleton --list [text]         request names, optionally only those containing text
+  qbx-skeleton --edition all ...     keep elements of every edition (default: QBD, US Desktop)
+
+Reads schema/qbxmlops130.xml, Intuit's annotated sample of every qbXML 13.0 message.
+"""
+import argparse
+import re
+import sys
+from pathlib import Path
+
+SOURCE = Path(__file__).resolve().parent / "schema" / "qbxmlops130.xml"
+EDITIONS = ["QBD", "QBCA", "QBUK", "QBAU", "all"]
+LEGEND = """\
+<!-- qbXML 13.0 {name}{edition}, from Intuit's annotated message list.
+     Elements must appear in this order. Notes: no note = required, opt = optional, may rep = optional and may repeat,
+     rep = required and may repeat, vN.0 = added in that qbXML version; between BEGIN OR and END OR
+     use only one of the alternatives. Values are types: STRTYPE text, AMTTYPE amount with at most
+     two decimals, DATETYPE YYYY-MM-DD, BOOLTYPE true/false, IDTYPE a ListID or TxnID, INTTYPE
+     whole number, ENUMTYPE one of the values listed above it. -->"""
+
+OPEN_TAG = re.compile(r"^(\s*)<([A-Za-z][\w.]*)([\s>/])")
+NOT_IN = re.compile(r"not in ([A-Z|]+)")
+FOR_EDITIONS = re.compile(r"^(.*) for ([A-Z|]+)$")
+OR_MARKER = re.compile(r"<!--\s*(BEGIN OR|END OR|OR)\b")
+
+
+def split_comment(line):
+    """Splits '<Tag>..</Tag>   <!-- notes -->' into the element part and the note text (or None)."""
+    m = re.match(r"^(.*?<[^!].*?)\s*<!--(.*)-->\s*$", line)
+    return (m.group(1), m.group(2).strip()) if m else (line, None)
+
+
+def is_comment(line):
+    return line.lstrip().startswith("<!--")
+
+
+def opens_block(line, tag):
+    """True when the line opens an element whose children follow on later lines."""
+    body = split_comment(line)[0]
+    return not body.rstrip().endswith("/>") and f"</{tag}>" not in body
+
+
+def find(lines, name):
+    """Returns the slice of lines for the first element called name, with the comments right above it."""
+    for i, line in enumerate(lines):
+        m = OPEN_TAG.match(line)
+        if not m or m.group(2) != name:
+            continue
+        indent = m.group(1)
+        end = i
+        if opens_block(line, name):
+            close = f"{indent}</{name}>"
+            end = next(j for j in range(i + 1, len(lines)) if lines[j].startswith(close))
+        start = i
+        while (start > 0 and is_comment(lines[start - 1]) and not OR_MARKER.search(lines[start - 1])
+               and lines[start - 1].startswith(indent) and not lines[start - 1][len(indent)].isspace()):
+            start -= 1
+        return lines[start:end + 1], len(indent)
+    return None, 0
+
+
+def tidy_note(note, edition):
+    """Keeps the parts of a note that apply to the edition, e.g. only its max length."""
+    kept = []
+    for part in (p.strip() for p in note.split(",")):
+        if NOT_IN.match(part):
+            continue
+        m = FOR_EDITIONS.match(part)
+        if m:
+            if edition in m.group(2).split("|"):
+                kept.append(m.group(1))
+            continue
+        kept.append(part)
+    return ", ".join(kept)
+
+
+def for_edition(block, edition):
+    """Drops the elements (and their nested lines and descriptive comments) not in the edition."""
+    out, pending, skip_until = [], [], None
+    for line in block:
+        if skip_until:
+            if line.startswith(skip_until):
+                skip_until = None
+            continue
+        if is_comment(line):
+            if OR_MARKER.search(line):
+                out.extend(pending)
+                pending = []
+                out.append(line)
+            else:
+                pending.append(line)
+            continue
+        body, note = split_comment(line)
+        m = OPEN_TAG.match(line)
+        excluded = note and (n := NOT_IN.search(note)) and edition in n.group(1).split("|")
+        if excluded:
+            pending = []
+            if m and opens_block(line, m.group(2)):
+                skip_until = f"{m.group(1)}</{m.group(2)}>"
+            continue
+        out.extend(pending)
+        pending = []
+        if note is not None:
+            note = tidy_note(note, edition)
+            line = f"{body.rstrip():<55} <!-- {note} -->" if note else body.rstrip()
+        out.append(line)
+    out.extend(pending)
+    return out
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0],
+                                 formatter_class=argparse.RawDescriptionHelpFormatter,
+                                 epilog="\n".join(__doc__.split("\n")[3:7]))
+    ap.add_argument("name", nargs="?", help="message or element name, e.g. CheckAddRq")
+    ap.add_argument("--list", nargs="?", const="", metavar="TEXT", help="list request names containing TEXT")
+    ap.add_argument("--edition", choices=EDITIONS, default="QBD")
+    args = ap.parse_args()
+
+    lines = SOURCE.read_text(encoding="utf-8").splitlines()
+
+    if args.list is not None:
+        names = sorted({m.group(1) for line in lines if (m := re.match(r"^    <(\w+Rq)[\s>]", line))})
+        print("\n".join(n for n in names if args.list.lower() in n.lower()))
+        return 0
+    if not args.name:
+        ap.print_usage(sys.stderr)
+        return 1
+
+    known = {m.group(2) for line in lines if (m := OPEN_TAG.match(line))}
+    name = next((n for n in known if n.lower() == args.name.lower()), args.name)
+    block, indent = find(lines, name)
+    if block is None:
+        close = [n for n in known if args.name.lower() in n.lower()]
+        hint = f" Similar: {', '.join(sorted(close)[:15])}" if close else ""
+        print(f"qbx-skeleton: no element {args.name} in qbXML 13.0.{hint}", file=sys.stderr)
+        return 1
+
+    block = [re.sub(r'(\w+) = "', r'\1="', line[indent:]) for line in block]
+    if args.edition != "all":
+        block = for_edition(block, args.edition)
+    edition = "" if args.edition == "all" else f" for {args.edition}"
+    print(LEGEND.format(name=name, edition=edition))
+    print("\n".join(block))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
