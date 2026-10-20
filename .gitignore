@@ -1,0 +1,4 @@
+# Personal data: backups and generated exports
+*.bck
+*.rtk
+__pycache__/
