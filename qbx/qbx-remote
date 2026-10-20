@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Sends a local qbXML request to qbx on a Windows host over SSH and prints the response.
+# Expects qbx.exe and qbx-desktop.ps1 in %USERPROFILE%\qbx on that host.
+#
+#   QBX_HOST=winvm qbx-remote request.xml [qbx options] > response.xml
+#   qbx-remote versions
+set -euo pipefail
+
+host="${QBX_HOST:-winvm}"
+if [[ $# -lt 1 ]]; then
+  echo "usage: qbx-remote <request.xml | versions> [qbx options]" >&2
+  exit 1
+fi
+
+req="$1"
+shift
+
+run() {
+  ssh -o LogLevel=ERROR "$host" \
+    "powershell -NoProfile -ExecutionPolicy Bypass -File %USERPROFILE%\\qbx\\qbx-desktop.ps1 $*"
+}
+
+if [[ "$req" == versions ]]; then
+  run "$@" versions
+  exit
+fi
+
+# Requests can hold company data, so the copy on the host is removed afterwards.
+name="req-$(date +%s%N).xml"
+scp -q -o LogLevel=ERROR "$req" "$host:qbx/$name"
+trap 'ssh -o LogLevel=ERROR "$host" "del qbx\\$name" >/dev/null 2>&1 || true' EXIT
+run "$@" "qbx\\$name"

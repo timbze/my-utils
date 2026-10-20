@@ -2,3 +2,8 @@
 *.bck
 *.rtk
 __pycache__/
+# qbx: build output and QuickBooks responses (company data)
+qbx/bin/
+qbx/obj/
+qbx/out/
+*.response.xml
