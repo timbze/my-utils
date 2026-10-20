@@ -3,7 +3,8 @@
 # Prints nothing for a valid request; for an invalid one, each error with its line number.
 # Requests for a newer qbXML version are skipped with a note. If python3 is installed, it also
 # checks that each IncludeRetElement names a field the response has (QuickBooks silently returns
-# nothing for any other name), which the schema cannot check.
+# nothing for any other name), which the schema cannot check. It also flags characters beyond
+# Latin-1, such as curly quotes and dashes: QuickBooks rejects the whole request over one.
 # Needs xmllint (libxml2-utils on Debian/Ubuntu, libxml2 on Arch and Homebrew).
 #
 #   qbx-validate request.xml [more.xml ...]
@@ -19,7 +20,23 @@ if ! command -v xmllint >/dev/null; then
 fi
 
 dir="$(dirname "$(readlink -f "$0")")"
+
+# Prints each character above U+00FF with its line and an ASCII stand-in; fails if there is one.
+check_chars() {
+  perl -CSD -ne '
+    BEGIN { %ascii = ("\x{2018}" => "\x27", "\x{2019}" => "\x27", "\x{201C}" => "\"", "\x{201D}" => "\"",
+                      "\x{2013}" => "-", "\x{2014}" => "-", "\x{2026}" => "...") }
+    while (/([^\x{0}-\x{FF}])/g) {
+      $found = 1;
+      $fix = exists $ascii{$1} ? " Use $ascii{$1} instead." : "";
+      printf STDERR "%s:%d: \"%s\" (U+%04X) is not in Latin-1; QuickBooks rejects the whole request over it.%s\n",
+        $ARGV, $., $1, ord $1, $fix;
+    }
+    END { exit 1 if $found }
+  ' "$1"
+}
 schema="$dir/schema/qbxmlops130.xsd"
+
 status=0
 for req in "$@"; do
   version=$(sed -n 's/.*<?qbxml[^>]*version *= *"\([0-9.]*\)".*/\1/p' "$req" | head -1)
@@ -39,5 +56,6 @@ for req in "$@"; do
     && ! "$dir/qbx-skeleton" --check-include "$req"; then
     status=1
   fi
+  check_chars "$req" || status=1
 done
 exit $status

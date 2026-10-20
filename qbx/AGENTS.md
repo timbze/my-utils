@@ -19,6 +19,7 @@ building and installing.
 3. **Order is strict.** Keep elements in the skeleton's order; leave optional ones out rather
    than sending them empty.
 4. Header `<?qbxml version="13.0"?>`. Amounts like `12.50`, dates `YYYY-MM-DD`, escape `&` and `<`.
+   Use plain ASCII punctuation in text: QuickBooks rejects the whole request over a `–` or `’`.
 5. **Check it**: `./qbx-validate request.xml`. `qbx-remote` and `qbx` do this before every send
    too, and refuse a request that does not match the schema.
 6. **Names must exist.** Account, vendor, customer and item refs are `FullName`s already in the
