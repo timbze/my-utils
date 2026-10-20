@@ -127,6 +127,8 @@ Then check the request:
 qbx --check request.xml           # Windows
 ```
 
+`qbx-validate` also checks that each `IncludeRetElement` names a field the response has
+(QuickBooks silently returns nothing for any other name); `qbx --check` checks the schema only.
 Both print nothing for a valid request and one line per error otherwise:
 
 ```

@@ -6,23 +6,25 @@ with notes on which are optional, repeat or are alternatives, and the allowed va
   qbx-skeleton CheckQueryRs          a response; any element works, e.g. CheckRet or ExpenseLineAdd
   qbx-skeleton --list [text]         request names, optionally only those containing text
   qbx-skeleton --edition all ...     keep elements of every edition (default: QBD, US Desktop)
+  qbx-skeleton --check-include a.xml check that each IncludeRetElement names a field of the response
 
 Reads schema/qbxmlops130.xml, Intuit's annotated sample of every qbXML 13.0 message.
 """
 import argparse
 import re
 import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 SOURCE = Path(__file__).resolve().parent / "schema" / "qbxmlops130.xml"
 EDITIONS = ["QBD", "QBCA", "QBUK", "QBAU", "all"]
 LEGEND = """\
 <!-- qbXML 13.0 {name}{edition}, from Intuit's annotated message list.
-     Elements must appear in this order. Notes: no note = required, opt = optional, may rep = optional and may repeat,
-     rep = required and may repeat, vN.0 = added in that qbXML version; between BEGIN OR and END OR
-     use only one of the alternatives. Values are types: STRTYPE text, AMTTYPE amount with at most
-     two decimals, DATETYPE YYYY-MM-DD, BOOLTYPE true/false, IDTYPE a ListID or TxnID, INTTYPE
-     whole number, ENUMTYPE one of the values listed above it. -->"""
+     Elements must appear in this order. Notes: no note = required, opt = optional, may rep =
+     optional and may repeat, rep = required and may repeat, vN.0 = added in that qbXML version;
+     between BEGIN OR and END OR use only one of the alternatives. Values are types: STRTYPE text,
+     AMTTYPE amount with at most two decimals, DATETYPE YYYY-MM-DD, BOOLTYPE true/false, IDTYPE a
+     ListID or TxnID, INTTYPE whole number, ENUMTYPE one of the values listed above it. -->"""
 
 OPEN_TAG = re.compile(r"^(\s*)<([A-Za-z][\w.]*)([\s>/])")
 NOT_IN = re.compile(r"not in ([A-Z|]+)")
@@ -114,16 +116,50 @@ def for_edition(block, edition):
     return out
 
 
+def children(lines, name):
+    """Names of the direct child elements of the first element called name."""
+    block, indent = find(lines, name)
+    return {m.group(2) for line in block or [] if (m := OPEN_TAG.match(line)) and len(m.group(1)) == indent + 2}
+
+
+def check_includes(lines, paths):
+    """IncludeRetElement must name a top-level field of the response's *Ret: QuickBooks silently
+    leaves out any other name. Prints one line per wrong name; returns 1 if there was any."""
+    status = 0
+    for path in paths:
+        try:
+            root = ET.parse(path).getroot()
+        except (ET.ParseError, OSError):
+            continue  # qbx-validate's schema check reports these
+        for rq in root.iter():
+            wanted = [(e.text or "").strip() for e in rq.findall("IncludeRetElement")]
+            if not wanted or not rq.tag.endswith("Rq"):
+                continue
+            rets = sorted(r for r in children(lines, rq.tag[:-2] + "Rs") if r.endswith("Ret"))
+            fields = set().union(*(children(lines, r) for r in rets))
+            for name in wanted:
+                if fields and name not in fields:
+                    print(f"{path}: {rq.tag}: IncludeRetElement {name} is not a field of {' or '.join(rets)}, "
+                          f"so QuickBooks returns nothing for it. Fields: {', '.join(sorted(fields))}",
+                          file=sys.stderr)
+                    status = 1
+    return status
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0],
                                  formatter_class=argparse.RawDescriptionHelpFormatter,
-                                 epilog="\n".join(__doc__.split("\n")[3:7]))
+                                 epilog="\n".join(__doc__.split("\n")[3:8]))
     ap.add_argument("name", nargs="?", help="message or element name, e.g. CheckAddRq")
     ap.add_argument("--list", nargs="?", const="", metavar="TEXT", help="list request names containing TEXT")
     ap.add_argument("--edition", choices=EDITIONS, default="QBD")
+    ap.add_argument("--check-include", nargs="+", metavar="REQUEST", help="check IncludeRetElement names in requests")
     args = ap.parse_args()
 
     lines = SOURCE.read_text(encoding="utf-8").splitlines()
+
+    if args.check_include:
+        return check_includes(lines, args.check_include)
 
     if args.list is not None:
         names = sorted({m.group(1) for line in lines if (m := re.match(r"^    <(\w+Rq)[\s>]", line))})

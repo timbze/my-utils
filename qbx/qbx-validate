@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Checks qbXML requests against the qbXML 13.0 schema in schema/, without QuickBooks.
 # Prints nothing for a valid request; for an invalid one, each error with its line number.
-# Requests for a newer qbXML version are skipped with a note.
+# Requests for a newer qbXML version are skipped with a note. If python3 is installed, it also
+# checks that each IncludeRetElement names a field the response has (QuickBooks silently returns
+# nothing for any other name), which the schema cannot check.
 # Needs xmllint (libxml2-utils on Debian/Ubuntu, libxml2 on Arch and Homebrew).
 #
 #   qbx-validate request.xml [more.xml ...]
@@ -16,7 +18,8 @@ if ! command -v xmllint >/dev/null; then
   exit 1
 fi
 
-schema="$(dirname "$(readlink -f "$0")")/schema/qbxmlops130.xsd"
+dir="$(dirname "$(readlink -f "$0")")"
+schema="$dir/schema/qbxmlops130.xsd"
 status=0
 for req in "$@"; do
   version=$(sed -n 's/.*<?qbxml[^>]*version *= *"\([0-9.]*\)".*/\1/p' "$req" | head -1)
@@ -31,6 +34,9 @@ for req in "$@"; do
   fi
   if ! out=$(xmllint --noout --schema "$schema" "$req" 2>&1); then
     grep -v ' fails to validate$' <<<"$out" >&2
+    status=1
+  elif grep -q IncludeRetElement "$req" && command -v python3 >/dev/null \
+    && ! "$dir/qbx-skeleton" --check-include "$req"; then
     status=1
   fi
 done

@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <?qbxml version="13.0"?>
 <!-- Every vendor, customer and other name. Several messages in one request cost one round trip;
-     each response carries the requestID of its message. -->
+     each response carries the requestID of its message.
+     IncludeRetElement must name a field the response really has, or QuickBooks silently leaves it
+     out: vendors and other names have only Name (it is what refs use as FullName), while
+     customers have FullName too ("Customer:Job" for jobs). qbx-skeleton VendorRet shows the fields. -->
 <QBXML>
   <QBXMLMsgsRq onError="continueOnError">
     <VendorQueryRq requestID="vendors">
       <ActiveStatus>All</ActiveStatus>
-      <IncludeRetElement>FullName</IncludeRetElement>
+      <IncludeRetElement>Name</IncludeRetElement>
       <IncludeRetElement>IsActive</IncludeRetElement>
     </VendorQueryRq>
     <CustomerQueryRq requestID="customers">
@@ -16,7 +19,7 @@
     </CustomerQueryRq>
     <OtherNameQueryRq requestID="other">
       <ActiveStatus>All</ActiveStatus>
-      <IncludeRetElement>FullName</IncludeRetElement>
+      <IncludeRetElement>Name</IncludeRetElement>
       <IncludeRetElement>IsActive</IncludeRetElement>
     </OtherNameQueryRq>
   </QBXMLMsgsRq>

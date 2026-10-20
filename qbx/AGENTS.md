@@ -57,6 +57,10 @@ building and installing.
 - A register with cleared status: `examples/query/register.xml` (a custom report; columns are
   matched to `ColDesc` by `colID`).
 - `IncludeRetElement` limits a query's response to the fields you name, which keeps it small.
+  It only takes top-level fields of the response's `*Ret`, and they differ by type: vendors and
+  other names have `Name` but no `FullName`, customers and accounts have both. QuickBooks silently
+  leaves out a name it does not know (or a nested one like `City`), so check with
+  `./qbx-skeleton VendorRet`; `qbx-validate` flags wrong names.
 
 ## What the SDK cannot do
 
