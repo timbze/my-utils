@@ -29,7 +29,10 @@ AI agents: read [AGENTS.md](AGENTS.md).
 
 ## Set up a new machine
 
-**1. Build** (needs the .NET 10 SDK; it builds from Linux too):
+**1. Get qbx.exe.** Download it from the
+[releases](https://github.com/timbze/my-utils/releases): `qbx-<version>-win-x86-qb2021-and-older.exe`
+for QuickBooks 2021 and older, `qbx-<version>-win-x64-qb2022-and-newer.exe` for 2022 and newer.
+Or build it (needs the .NET 10 SDK; it builds from Linux too):
 
 ```sh
 dotnet publish -c Release -o out              # win-x86: QuickBooks 2021 and older
@@ -55,6 +58,10 @@ export QBX_HOST=my-windows-box     # the ssh host name; default winvm
 ./qbx-remote doctor                # run again any time
 ```
 
+For a downloaded release, pass the file: `./qbx-remote install ~/Downloads/qbx-0.9.0-win-x64-qb2022-and-newer.exe`.
+It is installed as `qbx.exe` on the host whatever its name. `doctor` compares the host's copy with
+`out/qbx.exe`, or with the file you give it (`./qbx-remote doctor <file>`).
+
 ```
 Checking qbx on my-windows-box
   ok    xmllint found: requests are validated here before they are sent
@@ -72,7 +79,7 @@ All set.
 
 The authorization is per company file, so run `doctor` once with each file open.
 
-Without SSH, copy `qbx.exe` to the Windows machine and run it there in a terminal.
+Without SSH, copy the exe to the Windows machine as `qbx.exe` and run it there in a terminal.
 
 ## Use
 

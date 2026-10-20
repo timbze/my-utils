@@ -7,7 +7,10 @@
 #   qbx-remote request.xml [qbx options] > response.xml
 #   qbx-remote versions | company [qbx options]
 #   qbx-remote install [path/to/qbx.exe]    copy qbx.exe and qbx-desktop.ps1 to the host, then run doctor
-#   qbx-remote doctor                       check everything qbx needs on the host, step by step
+#   qbx-remote doctor [path/to/qbx.exe]     check everything qbx needs on the host, step by step
+#
+# The exe defaults to out/qbx.exe. A downloaded release file (qbx-0.9.0-win-x64-...exe) works as
+# it is; it is installed as qbx.exe on the host.
 #
 # QBX_HOST is the SSH host (default winvm). QBX_TIMEOUT is how many seconds the host waits for
 # qbx (default 900; doctor uses 120).
@@ -15,7 +18,7 @@ set -euo pipefail
 
 host="${QBX_HOST:-winvm}"
 dir="$(dirname "$(readlink -f "$0")")"
-usage="usage: qbx-remote <request.xml | versions | company | install [qbx.exe] | doctor> [qbx options]"
+usage="usage: qbx-remote <request.xml | versions | company | install [qbx.exe] | doctor [qbx.exe]> [qbx options]"
 
 remote() {
   ssh -o LogLevel=ERROR "$host" "$@"
@@ -38,8 +41,9 @@ ok() { printf '  ok    %s\n' "$*"; }
 warn() { printf '  warn  %s\n' "$*"; }
 fail() { printf '  FAIL  %s\n' "$*"; }
 
+# Checks the host step by step. The installed qbx.exe is compared with $1 (default out/qbx.exe).
 doctor() {
-  local user files hashes company versions err
+  local exe="${1:-$dir/out/qbx.exe}" user files hashes company versions err
   echo "Checking qbx on $host"
 
   if command -v xmllint >/dev/null; then
@@ -65,13 +69,13 @@ doctor() {
     return 1
   fi
   ok "qbx.exe and qbx-desktop.ps1 are installed"
-  if [[ -f "$dir/out/qbx.exe" ]]; then
+  if [[ -f "$exe" ]]; then
     hashes=$(remote "powershell -NoProfile -Command \"(Get-FileHash qbx\\qbx.exe).Hash; (Get-FileHash qbx\\qbx-desktop.ps1).Hash\"" \
       | tr -d '\r' | tr 'A-F' 'a-f' | tr '\n' ' ' || true)
-    if [[ "$hashes" == "$(sha256 "$dir/out/qbx.exe") $(sha256 "$dir/qbx-desktop.ps1") " ]]; then
-      ok "they match out/qbx.exe and qbx-desktop.ps1 here"
+    if [[ "$hashes" == "$(sha256 "$exe") $(sha256 "$dir/qbx-desktop.ps1") " ]]; then
+      ok "they match $(basename "$exe") and qbx-desktop.ps1 here"
     else
-      warn "they differ from out/qbx.exe or qbx-desktop.ps1 here: run qbx-remote install to update them"
+      warn "they differ from $exe or qbx-desktop.ps1 here: run qbx-remote install $exe to update them"
     fi
   fi
 
@@ -114,15 +118,16 @@ doctor() {
 install() {
   local exe="${1:-$dir/out/qbx.exe}"
   if [[ ! -f "$exe" ]]; then
-    echo "qbx-remote: $exe not found; build it first (see README.md)" >&2
+    echo "qbx-remote: $exe not found; build it (see README.md) or pass a downloaded release exe:" >&2
+    echo "  qbx-remote install ~/Downloads/qbx-0.9.0-win-x64-qb2022-and-newer.exe" >&2
     exit 1
   fi
   remote "if not exist qbx mkdir qbx"
   scp -q -o LogLevel=ERROR "$exe" "$host:qbx/qbx.exe"
   scp -q -o LogLevel=ERROR "$dir/qbx-desktop.ps1" "$host:qbx/qbx-desktop.ps1"
-  echo "Copied qbx.exe and qbx-desktop.ps1 to $host:%USERPROFILE%\\qbx"
+  echo "Copied $(basename "$exe") (as qbx.exe) and qbx-desktop.ps1 to $host:%USERPROFILE%\\qbx"
   echo
-  doctor
+  doctor "$exe"
 }
 
 case "${1:-}" in
@@ -136,7 +141,8 @@ case "${1:-}" in
     exit
     ;;
   doctor)
-    doctor
+    shift
+    doctor "$@"
     exit
     ;;
   versions | company)
