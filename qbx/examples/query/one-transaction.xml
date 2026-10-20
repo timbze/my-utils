@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?qbxml version="13.0"?>
+<!-- One check by TxnID, with its lines and EditSequence (needed for CheckModRq).
+     Every transaction type has its own query: BillQueryRq, DepositQueryRq, JournalEntryQueryRq ... -->
+<QBXML>
+  <QBXMLMsgsRq onError="continueOnError">
+    <CheckQueryRq requestID="1">
+      <TxnID>ABCD-1234567890</TxnID>
+      <IncludeLineItems>true</IncludeLineItems>
+    </CheckQueryRq>
+  </QBXMLMsgsRq>
+</QBXML>

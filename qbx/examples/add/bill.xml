@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?qbxml version="13.0"?>
+<!-- A vendor bill (accounts payable). RefNumber is the vendor's invoice number. A line may be
+     negative to net something off within the bill, as long as the bill total stays positive. -->
+<QBXML>
+  <QBXMLMsgsRq onError="continueOnError">
+    <BillAddRq requestID="1">
+      <BillAdd>
+        <VendorRef>
+          <FullName>Sample Vendor</FullName>
+        </VendorRef>
+        <TxnDate>2026-01-10</TxnDate>
+        <DueDate>2026-02-09</DueDate>
+        <RefNumber>INV-1001</RefNumber>
+        <Memo>[import 2026-01a] Hosting, January</Memo>
+        <ExpenseLineAdd>
+          <AccountRef>
+            <FullName>Computer and Internet Expenses</FullName>
+          </AccountRef>
+          <Amount>120.00</Amount>
+        </ExpenseLineAdd>
+      </BillAdd>
+    </BillAddRq>
+  </QBXMLMsgsRq>
+</QBXML>

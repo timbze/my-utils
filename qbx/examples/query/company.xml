@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?qbxml version="13.0"?>
+<!-- Which company file is open. Send this first and stop if the name is not the one you expect. -->
+<QBXML>
+  <QBXMLMsgsRq onError="continueOnError">
+    <CompanyQueryRq requestID="1">
+      <IncludeRetElement>CompanyName</IncludeRetElement>
+    </CompanyQueryRq>
+  </QBXMLMsgsRq>
+</QBXML>

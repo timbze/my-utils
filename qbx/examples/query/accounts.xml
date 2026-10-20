@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?qbxml version="13.0"?>
+<!-- The chart of accounts, including inactive ones. Refs in other requests use FullName ("Parent:Child"). -->
+<QBXML>
+  <QBXMLMsgsRq onError="continueOnError">
+    <AccountQueryRq requestID="1">
+      <ActiveStatus>All</ActiveStatus>
+      <IncludeRetElement>ListID</IncludeRetElement>
+      <IncludeRetElement>FullName</IncludeRetElement>
+      <IncludeRetElement>AccountType</IncludeRetElement>
+      <IncludeRetElement>IsActive</IncludeRetElement>
+      <IncludeRetElement>Balance</IncludeRetElement>
+    </AccountQueryRq>
+  </QBXMLMsgsRq>
+</QBXML>

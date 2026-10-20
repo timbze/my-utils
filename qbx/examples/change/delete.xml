@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?qbxml version="13.0"?>
+<!-- Deletes a transaction. This cannot be undone.
+     TxnDelType is the transaction type: Check, Deposit, Bill, BillPaymentCheck, VendorCredit,
+     JournalEntry, Transfer, CreditCardCharge, ... Use TxnVoidRq instead to keep a voided copy. -->
+<QBXML>
+  <QBXMLMsgsRq onError="continueOnError">
+    <TxnDelRq requestID="1">
+      <TxnDelType>Check</TxnDelType>
+      <TxnID>ABCD-1234567890</TxnID>
+    </TxnDelRq>
+  </QBXMLMsgsRq>
+</QBXML>

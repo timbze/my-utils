@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?qbxml version="13.0"?>
+<!-- Money into a bank account from something other than an invoice payment, e.g. interest or a
+     refund. EntityRef on a line is optional. -->
+<QBXML>
+  <QBXMLMsgsRq onError="continueOnError">
+    <DepositAddRq requestID="1">
+      <DepositAdd>
+        <TxnDate>2026-01-31</TxnDate>
+        <DepositToAccountRef>
+          <FullName>Checking</FullName>
+        </DepositToAccountRef>
+        <Memo>[import 2026-01a] January interest and a vendor refund</Memo>
+        <DepositLineAdd>
+          <AccountRef>
+            <FullName>Interest Income</FullName>
+          </AccountRef>
+          <Memo>Interest</Memo>
+          <Amount>3.17</Amount>
+        </DepositLineAdd>
+        <DepositLineAdd>
+          <EntityRef>
+            <FullName>Sample Vendor</FullName>
+          </EntityRef>
+          <AccountRef>
+            <FullName>Office Supplies</FullName>
+          </AccountRef>
+          <Memo>Refund of returned toner</Memo>
+          <Amount>25.00</Amount>
+        </DepositLineAdd>
+      </DepositAdd>
+    </DepositAddRq>
+  </QBXMLMsgsRq>
+</QBXML>

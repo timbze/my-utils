@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?qbxml version="13.0"?>
+<!-- A vendor's unpaid bills with their lines. BillPaymentCheckAdd and VendorCredit use the TxnID. -->
+<QBXML>
+  <QBXMLMsgsRq onError="continueOnError">
+    <BillQueryRq requestID="1">
+      <EntityFilter>
+        <FullName>Sample Vendor</FullName>
+      </EntityFilter>
+      <PaidStatus>NotPaidOnly</PaidStatus>
+      <IncludeLineItems>true</IncludeLineItems>
+    </BillQueryRq>
+  </QBXMLMsgsRq>
+</QBXML>

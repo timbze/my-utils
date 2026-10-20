@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?qbxml version="13.0"?>
+<!-- Moves money between two bank accounts of the same company. -->
+<QBXML>
+  <QBXMLMsgsRq onError="continueOnError">
+    <TransferAddRq requestID="1">
+      <TransferAdd>
+        <TxnDate>2026-01-05</TxnDate>
+        <TransferFromAccountRef>
+          <FullName>Checking</FullName>
+        </TransferFromAccountRef>
+        <TransferToAccountRef>
+          <FullName>Savings</FullName>
+        </TransferToAccountRef>
+        <Amount>500.00</Amount>
+        <Memo>[import 2026-01a] To savings</Memo>
+      </TransferAdd>
+    </TransferAddRq>
+  </QBXMLMsgsRq>
+</QBXML>

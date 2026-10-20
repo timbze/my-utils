@@ -13,4 +13,8 @@
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="schema\*.xsd" LogicalName="schema/%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>

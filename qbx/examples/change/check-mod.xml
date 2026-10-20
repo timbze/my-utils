@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?qbxml version="13.0"?>
+<!-- Changes a check. TxnID and the current EditSequence come from query/one-transaction.xml; a stale
+     EditSequence is refused, so query right before modifying. Only the elements you send change,
+     except lines: once any ExpenseLineMod is sent, lines left out are deleted. To keep a line,
+     send it with its TxnLineID; TxnLineID -1 adds a new one. -->
+<QBXML>
+  <QBXMLMsgsRq onError="continueOnError">
+    <CheckModRq requestID="1">
+      <CheckMod>
+        <TxnID>ABCD-1234567890</TxnID>
+        <EditSequence>1700000000</EditSequence>
+        <Memo>[import 2026-01a] Office supplies and delivery (corrected)</Memo>
+      </CheckMod>
+    </CheckModRq>
+  </QBXMLMsgsRq>
+</QBXML>

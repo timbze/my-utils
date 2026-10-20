@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?qbxml version="13.0"?>
+<!-- A new vendor. Name is the FullName other requests refer to. -->
+<QBXML>
+  <QBXMLMsgsRq onError="continueOnError">
+    <VendorAddRq requestID="1">
+      <VendorAdd>
+        <Name>Sample Vendor</Name>
+        <CompanyName>Sample Vendor Ltd.</CompanyName>
+      </VendorAdd>
+    </VendorAddRq>
+  </QBXMLMsgsRq>
+</QBXML>

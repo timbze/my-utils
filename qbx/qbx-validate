@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Checks qbXML requests against the qbXML 13.0 schema in schema/, without QuickBooks.
+# Prints nothing for a valid request; for an invalid one, each error with its line number.
+# Requests for a newer qbXML version are skipped with a note.
+# Needs xmllint (libxml2-utils on Debian/Ubuntu, libxml2 on Arch and Homebrew).
+#
+#   qbx-validate request.xml [more.xml ...]
+set -euo pipefail
+
+if [[ $# -lt 1 ]]; then
+  echo "usage: qbx-validate <request.xml> [more.xml ...]" >&2
+  exit 1
+fi
+if ! command -v xmllint >/dev/null; then
+  echo "qbx-validate: xmllint not found (install libxml2-utils or libxml2)" >&2
+  exit 1
+fi
+
+schema="$(dirname "$(readlink -f "$0")")/schema/qbxmlops130.xsd"
+status=0
+for req in "$@"; do
+  version=$(sed -n 's/.*<?qbxml[^>]*version *= *"\([0-9.]*\)".*/\1/p' "$req" | head -1)
+  if [[ -z "$version" ]]; then
+    echo "$req: no <?qbxml version=\"...\"?> line; QuickBooks needs one" >&2
+    status=1
+    continue
+  fi
+  if ! awk -v v="$version" 'BEGIN { exit !(v + 0 <= 13.0) }'; then
+    echo "$req: not checked, the schema here is qbXML 13.0 and the request asks for $version" >&2
+    continue
+  fi
+  if ! out=$(xmllint --noout --schema "$schema" "$req" 2>&1); then
+    grep -v ' fails to validate$' <<<"$out" >&2
+    status=1
+  fi
+done
+exit $status

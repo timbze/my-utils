@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?qbxml version="13.0"?>
+<!-- A general journal entry. Debits must equal credits. There is no header memo in qbXML: put the
+     memo on each line. RefNumber is the entry number shown in QuickBooks. -->
+<QBXML>
+  <QBXMLMsgsRq onError="continueOnError">
+    <JournalEntryAddRq requestID="1">
+      <JournalEntryAdd>
+        <TxnDate>2026-01-31</TxnDate>
+        <RefNumber>20260131</RefNumber>
+        <JournalDebitLine>
+          <AccountRef>
+            <FullName>Loan Payable</FullName>
+          </AccountRef>
+          <Amount>400.00</Amount>
+          <Memo>[import 2026-01a] January loan payment, principal</Memo>
+        </JournalDebitLine>
+        <JournalDebitLine>
+          <AccountRef>
+            <FullName>Interest Expense</FullName>
+          </AccountRef>
+          <Amount>35.00</Amount>
+          <Memo>[import 2026-01a] January loan payment, interest</Memo>
+        </JournalDebitLine>
+        <JournalCreditLine>
+          <AccountRef>
+            <FullName>Checking</FullName>
+          </AccountRef>
+          <Amount>435.00</Amount>
+          <Memo>[import 2026-01a] January loan payment</Memo>
+        </JournalCreditLine>
+      </JournalEntryAdd>
+    </JournalEntryAddRq>
+  </QBXMLMsgsRq>
+</QBXML>

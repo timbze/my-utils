@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?qbxml version="13.0"?>
+<!-- Every vendor, customer and other name. Several messages in one request cost one round trip;
+     each response carries the requestID of its message. -->
+<QBXML>
+  <QBXMLMsgsRq onError="continueOnError">
+    <VendorQueryRq requestID="vendors">
+      <ActiveStatus>All</ActiveStatus>
+      <IncludeRetElement>FullName</IncludeRetElement>
+      <IncludeRetElement>IsActive</IncludeRetElement>
+    </VendorQueryRq>
+    <CustomerQueryRq requestID="customers">
+      <ActiveStatus>All</ActiveStatus>
+      <IncludeRetElement>FullName</IncludeRetElement>
+      <IncludeRetElement>IsActive</IncludeRetElement>
+    </CustomerQueryRq>
+    <OtherNameQueryRq requestID="other">
+      <ActiveStatus>All</ActiveStatus>
+      <IncludeRetElement>FullName</IncludeRetElement>
+      <IncludeRetElement>IsActive</IncludeRetElement>
+    </OtherNameQueryRq>
+  </QBXMLMsgsRq>
+</QBXML>

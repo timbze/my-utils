@@ -9,6 +9,11 @@ scripting and for driving QuickBooks from another machine over SSH.
   Pass `--write` to allow `*AddRq`, `*ModRq`, `TxnDelRq` and the rest.
 - One request file per run, so many messages can go in one `QBXMLMsgsRq`. Non-zero statuses
   are listed on stderr and the exit code is 2 if any of them is an error.
+- **Checked before sending.** Requests are validated against Intuit's qbXML 13.0 schema
+  ([schema/](schema/)), so a wrong element order is reported with its line number instead of
+  QuickBooks' generic parse error.
+- **[Examples](examples/)** for the common reads and writes: checks, deposits, bills, bill
+  payments, journal entries, registers with cleared status, and more.
 
 ## Build
 
@@ -32,6 +37,7 @@ qbx versions
 ```
 
 `--file` is only needed when QuickBooks is not already open on the company file you want.
+`--check` only validates the request and exits; it does not need QuickBooks.
 The first run shows an authorization prompt in QuickBooks. Pick "Yes, always" to allow
 later runs without it.
 
@@ -50,8 +56,25 @@ QBX_HOST=my-windows-box ./qbx-remote request.xml > response.xml
 QBX_HOST=my-windows-box ./qbx-remote add-bills.xml --write
 ```
 
-`qbx-remote` copies the request over, runs it, and deletes the copy. `QBX_HOST` defaults to
+`qbx-remote` checks the request locally with `qbx-validate` (if `xmllint` is installed),
+copies it over, runs it, and deletes the copy. `QBX_HOST` defaults to
 `winvm`. For long requests set `QBX_TIMEOUT` (seconds, default 900) on the Windows side.
+
+## Validate without QuickBooks
+
+```sh
+./qbx-validate request.xml        # Linux/macOS, needs xmllint
+qbx --check request.xml           # Windows
+```
+
+Both print nothing for a valid request and one line per error otherwise:
+
+```
+request.xml:7: Schemas validity error : Element 'TxnDate': This element is not expected. Expected is ( AccountRef ).
+```
+
+Pass `--no-validate` to `qbx` or `qbx-remote` to skip the check. Requests for qbXML 14.0 and
+later are not checked, since the schema here is 13.0.
 
 ## Example request
 

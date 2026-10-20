@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?qbxml version="13.0"?>
+<!-- A credit from a vendor, applied later with SetCredit in a bill payment (bill-payment-check.xml). -->
+<QBXML>
+  <QBXMLMsgsRq onError="continueOnError">
+    <VendorCreditAddRq requestID="1">
+      <VendorCreditAdd>
+        <VendorRef>
+          <FullName>Sample Vendor</FullName>
+        </VendorRef>
+        <TxnDate>2026-01-20</TxnDate>
+        <RefNumber>CM-17</RefNumber>
+        <Memo>[import 2026-01a] Credit for a damaged item</Memo>
+        <ExpenseLineAdd>
+          <AccountRef>
+            <FullName>Office Supplies</FullName>
+          </AccountRef>
+          <Amount>20.00</Amount>
+          <Memo>Damaged item</Memo>
+        </ExpenseLineAdd>
+      </VendorCreditAdd>
+    </VendorCreditAddRq>
+  </QBXMLMsgsRq>
+</QBXML>

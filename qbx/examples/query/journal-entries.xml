@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?qbxml version="13.0"?>
+<!-- Journal entries by reference number, with their lines. -->
+<QBXML>
+  <QBXMLMsgsRq onError="continueOnError">
+    <JournalEntryQueryRq requestID="1">
+      <RefNumber>20260131</RefNumber>
+      <IncludeLineItems>true</IncludeLineItems>
+    </JournalEntryQueryRq>
+  </QBXMLMsgsRq>
+</QBXML>

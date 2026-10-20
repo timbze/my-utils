@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Sends a local qbXML request to qbx on a Windows host over SSH and prints the response.
 # Expects qbx.exe and qbx-desktop.ps1 in %USERPROFILE%\qbx on that host.
+# The request is checked against the qbXML schema here first (qbx-validate, if xmllint is
+# installed), so a malformed request fails at once instead of after the round trip.
 #
 #   QBX_HOST=winvm qbx-remote request.xml [qbx options] > response.xml
 #   qbx-remote versions
@@ -23,6 +25,10 @@ run() {
 if [[ "$req" == versions ]]; then
   run "$@" versions
   exit
+fi
+
+if [[ " $* " != *" --no-validate "* ]] && command -v xmllint >/dev/null; then
+  "$(dirname "$(readlink -f "$0")")/qbx-validate" "$req" || exit 1
 fi
 
 # Requests can hold company data, so the copy on the host is removed afterwards.

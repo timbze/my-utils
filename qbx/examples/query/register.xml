@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?qbxml version="13.0"?>
+<!-- One account's register with cleared status, like the register window in QuickBooks.
+     The SDK has no "last reconciled" field: the latest line with ClearedStatus "Cleared" is the
+     closest you get. Use ReportDateMacro All instead of ReportPeriod for the whole history.
+     Rows: ReportRet/ReportData/DataRow; ColDesc maps each colID to its column name. -->
+<QBXML>
+  <QBXMLMsgsRq onError="continueOnError">
+    <CustomDetailReportQueryRq requestID="1">
+      <CustomDetailReportType>CustomTxnDetail</CustomDetailReportType>
+      <ReportPeriod>
+        <FromReportDate>2026-01-01</FromReportDate>
+        <ToReportDate>2026-01-31</ToReportDate>
+      </ReportPeriod>
+      <ReportAccountFilter>
+        <FullName>Checking</FullName>
+      </ReportAccountFilter>
+      <SummarizeRowsBy>Account</SummarizeRowsBy>
+      <IncludeColumn>TxnID</IncludeColumn>
+      <IncludeColumn>TxnType</IncludeColumn>
+      <IncludeColumn>Date</IncludeColumn>
+      <IncludeColumn>RefNumber</IncludeColumn>
+      <IncludeColumn>Name</IncludeColumn>
+      <IncludeColumn>Memo</IncludeColumn>
+      <IncludeColumn>Account</IncludeColumn>
+      <IncludeColumn>SplitAccount</IncludeColumn>
+      <IncludeColumn>ClearedStatus</IncludeColumn>
+      <IncludeColumn>Amount</IncludeColumn>
+      <IncludeAccounts>All</IncludeAccounts>
+    </CustomDetailReportQueryRq>
+  </QBXMLMsgsRq>
+</QBXML>

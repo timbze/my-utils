@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?qbxml version="13.0"?>
+<!-- A payment out of a bank account (check, debit card, bank transfer to a vendor), split over two
+     expense accounts. PayeeEntityRef is optional and must be an existing vendor, customer,
+     employee or other name. Amounts are positive with two decimals. -->
+<QBXML>
+  <QBXMLMsgsRq onError="continueOnError">
+    <CheckAddRq requestID="1">
+      <CheckAdd>
+        <AccountRef>
+          <FullName>Checking</FullName>
+        </AccountRef>
+        <PayeeEntityRef>
+          <FullName>Sample Vendor</FullName>
+        </PayeeEntityRef>
+        <TxnDate>2026-01-15</TxnDate>
+        <Memo>[import 2026-01a] Office supplies and delivery</Memo>
+        <IsToBePrinted>false</IsToBePrinted>
+        <ExpenseLineAdd>
+          <AccountRef>
+            <FullName>Office Supplies</FullName>
+          </AccountRef>
+          <Amount>80.00</Amount>
+          <Memo>Paper and toner</Memo>
+        </ExpenseLineAdd>
+        <ExpenseLineAdd>
+          <AccountRef>
+            <FullName>Postage and Delivery</FullName>
+          </AccountRef>
+          <Amount>12.50</Amount>
+        </ExpenseLineAdd>
+      </CheckAdd>
+    </CheckAddRq>
+  </QBXMLMsgsRq>
+</QBXML>

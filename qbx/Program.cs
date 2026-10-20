@@ -23,9 +23,12 @@ public static class Program
           -o, --out <path>       write the response here instead of stdout
           -w, --write            allow requests other than *QueryRq (add, mod, delete, void)
           -a, --app-name <name>  name shown in the QuickBooks authorization prompt (default: qbx)
+          -c, --check            only check the request against the qbXML schema; QuickBooks is not needed
+              --no-validate      send without checking the request against the schema
 
         Read-only by default: a request is refused unless every message ends in QueryRq.
-        Exit codes: 0 ok, 1 usage or connection error, 2 QuickBooks returned an error status.
+        Requests for qbXML 13.0 and older are checked against the 13.0 schema before they are sent.
+        Exit codes: 0 ok, 1 usage, schema or connection error, 2 QuickBooks returned an error status.
         """;
 
     [STAThread]
@@ -38,6 +41,8 @@ public static class Program
         string? outPath = null;
         string appName = "qbx";
         var allowWrite = false;
+        var checkOnly = false;
+        var validate = true;
         string? input = null;
 
         for (var i = 0; i < args.Length; i++)
@@ -55,6 +60,12 @@ public static class Program
                     break;
                 case "-w" or "--write":
                     allowWrite = true;
+                    break;
+                case "-c" or "--check":
+                    checkOnly = true;
+                    break;
+                case "--no-validate":
+                    validate = false;
                     break;
                 case "-h" or "--help":
                     Console.WriteLine(Usage);
@@ -82,12 +93,46 @@ public static class Program
         {
             request = input == "-" ? Console.In.ReadToEnd() : File.ReadAllText(input);
 
-            var refusal = CheckReadOnly(request, allowWrite);
+            XDocument doc;
+            try
+            {
+                doc = XDocument.Parse(request);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Request is not valid XML: {ex.Message}");
+                return 1;
+            }
+
+            if (validate || checkOnly)
+            {
+                var errors = QbxmlSchema.Validate(doc, request);
+                if (errors == null)
+                {
+                    Console.Error.WriteLine($"Not checked: the schema here is qbXML {QbxmlSchema.Version}, the request asks for a newer version.");
+                }
+                else if (errors.Count > 0)
+                {
+                    Console.Error.WriteLine($"Request does not match the qbXML {QbxmlSchema.Version} schema:");
+                    errors.ForEach(e => Console.Error.WriteLine("  " + e));
+                    return 1;
+                }
+            }
+
+            if (checkOnly)
+                return 0;
+
+            var refusal = CheckReadOnly(doc, allowWrite);
             if (refusal != null)
             {
                 Console.Error.WriteLine(refusal);
                 return 1;
             }
+        }
+        else if (checkOnly)
+        {
+            Console.Error.WriteLine(Usage);
+            return 1;
         }
 
         try
@@ -119,18 +164,8 @@ public static class Program
     }
 
     /// <summary>Returns a refusal message, or null when the request may be sent.</summary>
-    private static string? CheckReadOnly(string request, bool allowWrite)
+    private static string? CheckReadOnly(XDocument doc, bool allowWrite)
     {
-        XDocument doc;
-        try
-        {
-            doc = XDocument.Parse(request);
-        }
-        catch (Exception ex)
-        {
-            return $"Request is not valid XML: {ex.Message}";
-        }
-
         var messages = doc.Root?.Element("QBXMLMsgsRq")?.Elements().ToList();
         if (messages == null || messages.Count == 0)
             return "Request has no messages under QBXML/QBXMLMsgsRq.";

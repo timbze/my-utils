@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?qbxml version="13.0"?>
+<!-- Pays open bills from a bank account. Each AppliedToTxnAdd is one bill (its TxnID from
+     query/open-bills.xml). SetCredit uses a vendor credit on that bill: the payment is then the
+     bill amount minus the credit. The check total is the sum of the PaymentAmounts. -->
+<QBXML>
+  <QBXMLMsgsRq onError="continueOnError">
+    <BillPaymentCheckAddRq requestID="1">
+      <BillPaymentCheckAdd>
+        <PayeeEntityRef>
+          <FullName>Sample Vendor</FullName>
+        </PayeeEntityRef>
+        <TxnDate>2026-02-05</TxnDate>
+        <BankAccountRef>
+          <FullName>Checking</FullName>
+        </BankAccountRef>
+        <IsToBePrinted>false</IsToBePrinted>
+        <Memo>[import 2026-02a] Payment of INV-1001 less CM-17</Memo>
+        <AppliedToTxnAdd>
+          <TxnID>ABCD-1234567890</TxnID>
+          <PaymentAmount>100.00</PaymentAmount>
+          <SetCredit>
+            <CreditTxnID>ABCE-1234567891</CreditTxnID>
+            <AppliedAmount>20.00</AppliedAmount>
+          </SetCredit>
+        </AppliedToTxnAdd>
+      </BillPaymentCheckAdd>
+    </BillPaymentCheckAddRq>
+  </QBXMLMsgsRq>
+</QBXML>

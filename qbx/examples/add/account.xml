@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?qbxml version="13.0"?>
+<!-- A new account in the chart of accounts. A subaccount takes ParentRef with the parent's FullName.
+     AccountType values include Bank, CreditCard, Expense, Income, OtherCurrentLiability, LongTermLiability, Equity. -->
+<QBXML>
+  <QBXMLMsgsRq onError="continueOnError">
+    <AccountAddRq requestID="1">
+      <AccountAdd>
+        <Name>Software Subscriptions</Name>
+        <ParentRef>
+          <FullName>Computer and Internet Expenses</FullName>
+        </ParentRef>
+        <AccountType>Expense</AccountType>
+        <Desc>Monthly software plans</Desc>
+      </AccountAdd>
+    </AccountAddRq>
+  </QBXMLMsgsRq>
+</QBXML>
