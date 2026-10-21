@@ -10,3 +10,7 @@ Small one-off tools and scripts.
 ## License
 
 GPL-3.0-or-later. See [LICENSE](LICENSE).
+
+---
+
+Made by the team behind [TecPoint](https://tecpoint.app), point of sale for Belize.

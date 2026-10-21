@@ -159,3 +159,7 @@ request.xml:7: Schemas validity error : Element 'TxnDate': This element is not e
 `qbx` and `qbx-remote` run this check before every send; `--no-validate` skips it. Requests for
 qbXML 14.0 and later are not checked, since the schema here is 13.0. `qbx versions` lists the
 versions your QuickBooks accepts.
+
+---
+
+Made by the team behind [TecPoint](https://tecpoint.app), point of sale for Belize.
