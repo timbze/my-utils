@@ -70,7 +70,7 @@ export QBX_HOST=my-windows-box     # the ssh host name; default winvm
 ./qbx-remote doctor                # run again any time
 ```
 
-For a downloaded release, pass the file: `./qbx-remote install ~/Downloads/qbx-0.9.0-win-x64-qb2022-and-newer.exe`.
+For a downloaded release, pass the file: `./qbx-remote install ~/Downloads/qbx-0.9.5-win-x64-qb2022-and-newer.exe`.
 It is installed as `qbx.exe` on the host whatever its name. `doctor` compares the host's copy with
 `out/qbx.exe`, or with the file you give it (`./qbx-remote doctor <file>`).
 
@@ -87,6 +87,7 @@ Checking qbx on my-windows-box
   ok    QuickBooks has "Sample Company" open and qbx is authorized
   ok    qbXML versions 1.0 ... 13.0 (13.0, which the schema and examples use, is supported)
 All set.
+qbx is made by the team behind TecPoint (https://tecpoint.app), point of sale for Belize.
 ```
 
 The authorization is per company file, so run `doctor` once with each file open.

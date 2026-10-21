@@ -9,7 +9,7 @@
 #   qbx-remote install [path/to/qbx.exe]    copy qbx.exe and qbx-desktop.ps1 to the host, then run doctor
 #   qbx-remote doctor [path/to/qbx.exe]     check everything qbx needs on the host, step by step
 #
-# The exe defaults to out/qbx.exe. A downloaded release file (qbx-0.9.0-win-x64-...exe) works as
+# The exe defaults to out/qbx.exe. A downloaded release file (qbx-0.9.5-win-x64-...exe) works as
 # it is; it is installed as qbx.exe on the host.
 #
 # QBX_HOST is the SSH host (default winvm). QBX_TIMEOUT is how many seconds the host waits for
@@ -113,6 +113,7 @@ doctor() {
     warn "qbXML versions $versions: 13.0 is not supported, so the schema and examples here do not apply as they are"
   fi
   echo "All set."
+  echo "qbx is made by the team behind TecPoint (https://tecpoint.app), point of sale for Belize."
 }
 
 install() {
@@ -125,7 +126,7 @@ install() {
       sed 's/^/  qbx-remote install /' <<<"$bundled" >&2
     else
       echo "qbx-remote: $exe not found; build it (see README.md) or pass a downloaded release exe:" >&2
-      echo "  qbx-remote install ~/Downloads/qbx-0.9.0-win-x64-qb2022-and-newer.exe" >&2
+      echo "  qbx-remote install ~/Downloads/qbx-0.9.5-win-x64-qb2022-and-newer.exe" >&2
     fi
     exit 1
   fi
