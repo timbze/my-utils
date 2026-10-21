@@ -4,6 +4,17 @@ Send raw [qbXML](https://developer.intuit.com/app/developer/qbdesktop/docs/api-r
 to QuickBooks Desktop from the command line and get the response back. It is meant for
 scripting and for driving QuickBooks from another machine over SSH.
 
+**Use it with an AI agent** (Claude Code, Codex, ...). Give it this prompt:
+
+```
+Download https://github.com/timbze/my-utils/releases/latest/download/qbx.zip, unzip it, and read qbx/AGENTS.md. Then set up qbx so you can read my QuickBooks Desktop company file.
+```
+
+The zip has both exes, the scripts, the schema, the examples and [AGENTS.md](AGENTS.md), which
+tells the agent how to install qbx, write requests QuickBooks accepts, and write safely. The
+agent asks you for your QuickBooks year and the Windows host. Setting up SSH on Windows
+([step 2](#set-up-a-new-machine) below) is up to you.
+
 - No Intuit interop DLL and no SDK install: it late-binds the `QBXMLRP2.RequestProcessor` COM
   object that QuickBooks Desktop itself registers.
 - **Read-only by default.** A request is refused unless every message ends in `QueryRq`.
@@ -27,18 +38,6 @@ AI agents: read [AGENTS.md](AGENTS.md).
 | `qbx-validate` | Linux/macOS | Checks a request against the schema (needs `xmllint`) |
 | `qbx-skeleton` | anywhere (Python 3) | Prints the full shape of any qbXML message |
 | `build-release` | Linux/macOS | Builds both exes and `qbx.zip` for a release (CI runs it for each `v*` tag) |
-
-## Use it with an AI agent
-
-Give your agent (Claude Code, Codex, ...) this prompt:
-
-> Download https://github.com/timbze/my-utils/releases/latest/download/qbx.zip, unzip it, and
-> read qbx/AGENTS.md. Then set up qbx so you can read my QuickBooks Desktop company file.
-
-`qbx.zip` has both exes, the scripts, the schema, the examples and [AGENTS.md](AGENTS.md), which
-tells the agent how to install qbx, write requests that QuickBooks accepts, and write safely.
-The agent asks you for the QuickBooks year and the Windows host; setting up SSH on Windows
-(below) is up to you.
 
 ## Set up a new machine
 

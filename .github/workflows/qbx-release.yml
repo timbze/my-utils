@@ -24,7 +24,11 @@ jobs:
         run: |
           v="${GITHUB_REF_NAME#v}"
           cat > notes.md <<NOTES
-          **With an AI agent:** download \`qbx.zip\` and point the agent at \`qbx/AGENTS.md\` (see the [README](https://github.com/timbze/my-utils/tree/$GITHUB_REF_NAME/qbx#use-it-with-an-ai-agent)).
+          **With an AI agent:** give it this prompt (more in the [README](https://github.com/timbze/my-utils/tree/$GITHUB_REF_NAME/qbx)):
+
+          \`\`\`
+          Download https://github.com/timbze/my-utils/releases/latest/download/qbx.zip, unzip it, and read qbx/AGENTS.md. Then set up qbx so you can read my QuickBooks Desktop company file.
+          \`\`\`
 
           **Just the exe:** \`qbx-$v-win-x64-qb2022-and-newer.exe\` for QuickBooks Desktop 2022 and newer, \`qbx-$v-win-x86-qb2021-and-older.exe\` for 2021 and older. Rename it to \`qbx.exe\`, or pass it to \`qbx-remote install\` as it is.
           NOTES
